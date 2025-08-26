@@ -350,7 +350,22 @@ function Header({ locale, changeLocale }) {
         }}
       >
         <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-          <img src={logo} alt="Compress PDF Logo" style={{ height: 32, width: "auto" }} />
+          <button 
+            onClick={() => setShowStats(false)}
+            style={{
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              padding: 0,
+              display: "flex",
+              alignItems: "center"
+            }}
+          >
+            <img src={logo} alt="Compress PDF Logo" style={{ height: 32, width: "auto" }} />
+          </button>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
           <button 
             onClick={() => setShowStats(true)}
             style={{
@@ -370,31 +385,31 @@ function Header({ locale, changeLocale }) {
           >
             📊 Stats
           </button>
-        </div>
-
-        <div className="langWrap">
-          <label htmlFor="lang" style={{ fontSize: 12, marginRight: 8, color: "#94a3b8" }}>
-            Language
-          </label>
-          <select
-            id="lang"
-            value={locale}
-            onChange={(e) => changeLocale(e.target.value)}
-            style={{
-              padding: "8px 12px",
-              borderRadius: 10,
-              border: "1px solid #334155",
-              background: "#0f172a",
-              color: "#e2e8f0",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            <option value="en">English</option>
-            <option value="af">Afrikaans</option>
-            <option value="zu">Zulu</option>
-            <option value="xh">Xhosa</option>
-          </select>
+          
+          <div className="langWrap">
+            <label htmlFor="lang" style={{ fontSize: 12, marginRight: 8, color: "#94a3b8" }}>
+              Language
+            </label>
+            <select
+              id="lang"
+              value={locale}
+              onChange={(e) => changeLocale(e.target.value)}
+              style={{
+                padding: "8px 12px",
+                borderRadius: 10,
+                border: "1px solid #334155",
+                background: "#0f172a",
+                color: "#e2e8f0",
+                fontWeight: "600",
+                cursor: "pointer",
+              }}
+            >
+              <option value="en">English</option>
+              <option value="af">Afrikaans</option>
+              <option value="zu">Zulu</option>
+              <option value="xh">Xhosa</option>
+            </select>
+          </div>
         </div>
       </div>
     </header>
@@ -444,7 +459,14 @@ export default function App() {
         console.error("Failed to fetch stats", e);
       }
     }
+    
+    // Initial fetch
     fetchStats();
+    
+    // Set up live counter - update every 10 seconds
+    const interval = setInterval(fetchStats, 10000);
+    
+    return () => clearInterval(interval);
   }, []);
 
 
@@ -762,6 +784,7 @@ export default function App() {
               }))
               .catch(console.error);
           }}
+          apiBase={API_BASE}
         />
       </div>
     );
@@ -789,6 +812,19 @@ export default function App() {
           .fileName { max-width: 100% !important; }
           .btnBig { width:100%; justify-content:center; }
         }
+        
+        /* Mobile responsive button layouts */
+        @media (max-width: 768px) {
+          /* Make all step buttons stack on mobile */
+          .step-buttons {
+            flex-direction: column !important;
+            width: 100% !important;
+          }
+          
+          .step-buttons button {
+            width: 100% !important;
+          }
+        }
         .titleClamp { font-size: clamp(22px, 6.2vw, 36px); line-height: 1.15; }
         .subtleClamp { font-size: clamp(13px, 3.6vw, 16px); }
         .dropZone { padding: 28px; }
@@ -803,7 +839,7 @@ export default function App() {
 
       <div style={container} className="container-sm">
         {/* Intro */}
-        <div style={{ marginBottom: 40, textAlign: "center" }}>
+        <div style={{ marginTop: 60, marginBottom: 40, textAlign: "center" }}>
           <h1 style={h1} className="titleClamp">
             {t("title")}
           </h1>
@@ -965,15 +1001,14 @@ export default function App() {
 
               {/* Step 1 actions */}
               <div style={{ marginTop: 16 }}>
-                <div style={{
+                <div className="step-buttons" style={{
                   display: "flex",
-                  flexDirection: "column",
                   gap: "12px",
-                  width: "100%"
+                  justifyContent: "center",
+                  flexWrap: "wrap"
                 }}>
                   <button onClick={clearAll} style={{
                     ...bigBtnRed,
-                    width: "100%",
                     justifyContent: "center"
                   }}>
                     {t("clear")} <FiTrash2 />
@@ -983,7 +1018,6 @@ export default function App() {
                     disabled={files.length === 0}
                     style={{
                       ...bigBtnBlue,
-                      width: "100%",
                       justifyContent: "center",
                       border: files.length > 0 ? "2px solid #60a5fa" : "1px solid #334155",
                       animation: files.length > 0 ? "pulseRing 1.6s ease-in-out infinite" : "none",
@@ -1055,17 +1089,17 @@ export default function App() {
               </div>
 
               <div
+                className="step-buttons"
                 style={{
                   marginTop: 16,
                   display: "flex",
-                  flexDirection: "column",
                   gap: "12px",
-                  width: "100%"
+                  justifyContent: "center",
+                  flexWrap: "wrap"
                 }}
               >
                 <button onClick={() => setStep(1)} style={{
                   ...ghostBtn,
-                  width: "100%",
                   justifyContent: "center",
                   display: "flex",
                   alignItems: "center",
@@ -1075,7 +1109,6 @@ export default function App() {
                 </button>
                 <button onClick={startCompression} style={{
                   ...primaryBtn(true),
-                  width: "100%",
                   justifyContent: "center",
                   display: "flex",
                   alignItems: "center",
@@ -1204,15 +1237,14 @@ export default function App() {
 
               {/* Step 3 footer controls */}
               <div style={{ marginTop: 20 }}>
-                <div style={{
+                <div className="step-buttons" style={{
                   display: "flex",
-                  flexDirection: "column",
-                  gap: "12px",
-                  width: "100%"
+                  gap: "16px",
+                  justifyContent: "center",
+                  flexWrap: "wrap"
                 }}>
                   <button onClick={() => setStep(1)} style={{
                     ...bigBtnGreen,
-                    width: "100%",
                     justifyContent: "center"
                   }}>
                     {t("compressMore")} <FiRefreshCw />
@@ -1220,7 +1252,6 @@ export default function App() {
                   {files.some((f) => f.status === "done") && (
                     <button onClick={downloadAllZip} style={{
                       ...bigBtnIndigo,
-                      width: "100%",
                       justifyContent: "center"
                     }} className="btnBig">
                       {t("downloadZip")} <FiArchive />
@@ -1228,7 +1259,6 @@ export default function App() {
                   )}
                   <button onClick={clearAll} style={{
                     ...bigBtnRed,
-                    width: "100%",
                     justifyContent: "center"
                   }} className="btnBig">
                     {t("clear")} <FiTrash2 />
@@ -1282,14 +1312,21 @@ export default function App() {
               textAlign: "center",
               background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
               color: "white",
-              padding: "16px 24px",
-              borderRadius: 12,
+              padding: "24px 32px",
+              borderRadius: 16,
               fontWeight: 700,
-              marginTop: 16,
-              boxShadow: "0 8px 25px rgba(0,0,0,0.15)"
+              marginTop: 20,
+              boxShadow: "0 12px 35px rgba(0,0,0,0.2)",
+              minWidth: "280px"
             }}
           >
-            📊 <strong>{pdfStats.total_compressed?.toLocaleString() || "0"}</strong> PDFs compressed so far
+            <div style={{ fontSize: "2.5rem", marginBottom: "8px" }}>📊</div>
+            <div style={{ fontSize: "3.5rem", fontWeight: "900", marginBottom: "8px", lineHeight: 1 }}>
+              {pdfStats.total_compressed?.toLocaleString() || "0"}
+            </div>
+            <div style={{ fontSize: "1.1rem", opacity: 0.9 }}>
+              PDFs compressed so far
+            </div>
           </div>
 
 
