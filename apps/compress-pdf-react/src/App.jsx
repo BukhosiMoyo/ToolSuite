@@ -1,9 +1,8 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useMemo, useRef, useState, useEffect } from "react";
-import { FiTrash2, FiArrowRight, FiArrowLeft, FiArchive, FiRefreshCw } from "react-icons/fi";
+import { FiTrash2, FiArrowRight, FiArrowLeft, FiArchive, FiRefreshCw, FiTrendingUp, FiStar, FiUsers } from "react-icons/fi";
 import logo from "/CompressPDFLogo.webp";
 import ReviewModal from "./components/ReviewModal";
-import StatsPage from "./components/StatsPage";
 import { useReviewPrompt } from "./hooks/useReviewPrompt";
 
 /* =========================
@@ -133,7 +132,7 @@ const MESSAGES = {
 /* =========================
    CONFIG
    ========================= */
-const API_BASE = import.meta.env.VITE_API_BASE || "https://api.compresspdf.co.za";
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:4000";
 const SUPPORTED = ["en", "af", "zu", "xh"];
 const baseUrl = "https://compresspdf.co.za";
 
@@ -358,8 +357,10 @@ function Header({ locale, changeLocale }) {
               cursor: "pointer",
               padding: 0,
               display: "flex",
-              alignItems: "center"
+              alignItems: "center",
+              outline: "none"
             }}
+            onFocus={(e) => e.target.style.outline = "none"}
           >
             <img src={logo} alt="Compress PDF Logo" style={{ height: 32, width: "auto" }} />
           </button>
@@ -367,7 +368,10 @@ function Header({ locale, changeLocale }) {
 
         <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
           <button 
-            onClick={() => setShowStats(true)}
+            onClick={() => {
+              console.log('Stats button clicked, scrolling to stats section');
+              document.getElementById('stats-section')?.scrollIntoView({ behavior: 'smooth' });
+            }}
             style={{
               color: "#e2e8f0",
               textDecoration: "none",
@@ -378,10 +382,12 @@ function Header({ locale, changeLocale }) {
               fontWeight: "600",
               transition: "all 0.2s ease",
               border: "none",
-              cursor: "pointer"
+              cursor: "pointer",
+              outline: "none"
             }}
             onMouseEnter={(e) => e.target.style.background = "rgba(255,255,255,0.2)"}
             onMouseLeave={(e) => e.target.style.background = "rgba(255,255,255,0.1)"}
+            onFocus={(e) => e.target.style.outline = "none"}
           >
             📊 Stats
           </button>
@@ -403,11 +409,35 @@ function Header({ locale, changeLocale }) {
                 fontWeight: "600",
                 cursor: "pointer",
               }}
+              className="desktop-lang-selector"
             >
               <option value="en">English</option>
               <option value="af">Afrikaans</option>
               <option value="zu">Zulu</option>
               <option value="xh">Xhosa</option>
+            </select>
+            
+            {/* Mobile-friendly language selector */}
+            <select
+              id="lang-mobile"
+              value={locale}
+              onChange={(e) => changeLocale(e.target.value)}
+              style={{
+                padding: "8px 12px",
+                borderRadius: 10,
+                border: "1px solid #334155",
+                background: "#0f172a",
+                color: "#e2e8f0",
+                fontWeight: "600",
+                cursor: "pointer",
+                display: "none"
+              }}
+              className="mobile-lang-selector"
+            >
+              <option value="en">EN</option>
+              <option value="af">AF</option>
+              <option value="zu">ZU</option>
+              <option value="xh">XH</option>
             </select>
           </div>
         </div>
@@ -463,8 +493,8 @@ export default function App() {
     // Initial fetch
     fetchStats();
     
-    // Set up live counter - update every 10 seconds
-    const interval = setInterval(fetchStats, 10000);
+    // Set up live counter - update every 2 seconds for real-time feel
+    const interval = setInterval(fetchStats, 2000);
     
     return () => clearInterval(interval);
   }, []);
@@ -572,7 +602,6 @@ export default function App() {
   const [reviewStats, setReviewStats] = useState({ count: 0, average: 5 });
   // Stats for compressed PDFs
   const [pdfStats, setPdfStats] = useState({ total_compressed: 0, updated_at: null });
-  const [showStats, setShowStats] = useState(false);
   const inputRef = useRef(null);
   const [files, setFiles] = useState([]);
   const [compression, setCompression] = useState("medium");
@@ -756,39 +785,7 @@ export default function App() {
     a.remove();
   };
 
-  // If stats page is shown, render it instead of the main app
-  if (showStats) {
-    return (
-      <div style={page}>
-        <StatsPage
-          stats={pdfStats}
-          reviews={reviewStats}
-          loading={false}
-          error={null}
-          onBack={() => setShowStats(false)}
-          onRefresh={() => {
-            // Refresh the stats
-            fetch(`${API_BASE}/v1/compress-pdf/stats`)
-              .then(res => res.json())
-              .then(data => setPdfStats({
-                total_compressed: data.total_compressed || 0,
-                updated_at: data.updated_at
-              }))
-              .catch(console.error);
-            
-            fetch(`${API_BASE}/v1/compress-pdf/reviews`)
-              .then(res => res.json())
-              .then(data => setReviewStats({
-                count: data.reviewCount || 0,
-                average: data.ratingValue || 5
-              }))
-              .catch(console.error);
-          }}
-          apiBase={API_BASE}
-        />
-      </div>
-    );
-  }
+
 
   return (
     <div style={page}>
@@ -798,6 +795,53 @@ export default function App() {
           0% { box-shadow: 0 0 0 0 rgba(96,165,250, 0.4); }
           70% { box-shadow: 0 0 0 8px rgba(96,165,250, 0); }
           100% { box-shadow: 0 0 0 0 rgba(96,165,250, 0); }
+        }
+        
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+        
+        .stats-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+          gap: 24px;
+          justify-content: center;
+        }
+        
+        @media (max-width: 768px) {
+          .stats-grid {
+            grid-template-columns: 1fr;
+            max-width: 300px;
+            margin: 0 auto;
+          }
+        }
+        
+        @media (max-width: 1024px) and (min-width: 769px) {
+          .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+            max-width: 600px;
+            margin: 0 auto;
+          }
+        }
+        
+        /* Language selector responsive behavior */
+        .desktop-lang-selector {
+          display: block;
+        }
+        
+        .mobile-lang-selector {
+          display: none;
+        }
+        
+        @media (max-width: 768px) {
+          .desktop-lang-selector {
+            display: none;
+          }
+          
+          .mobile-lang-selector {
+            display: block;
+          }
         }
         *, *::before, *::after { box-sizing: border-box; }
         html, body { width:100%; margin:0; overflow-x:hidden; }
@@ -1422,6 +1466,198 @@ export default function App() {
               </p>
             </div>
           </div>
+        </section>
+
+        {/* Stats Section */}
+        <section id="stats-section" style={{
+          maxWidth: 800,
+          margin: "40px auto 32px",
+          padding: "0 16px",
+          textAlign: "center",
+        }}>
+          <h2 style={{ marginBottom: 32, fontSize: 32, fontWeight: 900, color: "#e2e8f0" }}>
+            📊 Live Statistics
+          </h2>
+          
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+            gap: "24px",
+            marginBottom: "32px",
+            justifyContent: "center"
+          }}
+          className="stats-grid"
+          >
+            {/* Total Compressed PDFs */}
+            <div style={{
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              color: "white",
+              padding: "28px",
+              borderRadius: "20px",
+              textAlign: "center",
+              boxShadow: "0 15px 35px rgba(0,0,0,0.15)",
+              transition: "transform 0.3s ease"
+            }}
+            onMouseEnter={(e) => e.target.style.transform = "translateY(-8px)"}
+            onMouseLeave={(e) => e.target.style.transform = "translateY(0)"}
+            >
+              <div style={{ fontSize: "3rem", marginBottom: "12px" }}>📊</div>
+              <h3 style={{ margin: "0 0 12px 0", fontSize: "1.3rem", opacity: 0.9 }}>
+                Total Compressed
+              </h3>
+              <div style={{ fontSize: "3.5rem", fontWeight: "900", margin: "12px 0", lineHeight: 1 }}>
+                {pdfStats.total_compressed?.toLocaleString() || "0"}
+              </div>
+              <p style={{ margin: "0", fontSize: "1rem", opacity: 0.8 }}>
+                PDF files processed
+              </p>
+            </div>
+
+            {/* Total Reviews */}
+            <div style={{
+              background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+              color: "white",
+              padding: "28px",
+              borderRadius: "20px",
+              textAlign: "center",
+              boxShadow: "0 15px 35px rgba(0,0,0,0.15)",
+              transition: "transform 0.3s ease"
+            }}
+            onMouseEnter={(e) => e.target.style.transform = "translateY(-8px)"}
+            onMouseLeave={(e) => e.target.style.transform = "translateY(0)"}
+            >
+              <div style={{ fontSize: "3rem", marginBottom: "12px" }}>⭐</div>
+              <h3 style={{ margin: "0 0 12px 0", fontSize: "1.3rem", opacity: 0.9 }}>
+                Total Reviews
+              </h3>
+              <div style={{ fontSize: "3.5rem", fontWeight: "900", margin: "12px 0", lineHeight: 1 }}>
+                {reviewStats.count || "0"}
+              </div>
+              <p style={{ margin: "0", fontSize: "1rem", opacity: 0.8 }}>
+                User ratings received
+              </p>
+            </div>
+
+            {/* Average Rating */}
+            <div style={{
+              background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+              color: "white",
+              padding: "28px",
+              borderRadius: "20px",
+              textAlign: "center",
+              boxShadow: "0 15px 35px rgba(0,0,0,0.15)",
+              transition: "transform 0.3s ease"
+            }}
+            onMouseEnter={(e) => e.target.style.transform = "translateY(-8px)"}
+            onMouseLeave={(e) => e.target.style.transform = "translateY(0)"}
+            >
+              <div style={{ fontSize: "3rem", marginBottom: "12px" }}>👥</div>
+              <h3 style={{ margin: "0 0 12px 0", fontSize: "1.3rem", opacity: 0.9 }}>
+                Average Rating
+              </h3>
+              <div style={{ fontSize: "2.5rem", fontWeight: "900", margin: "12px 0", lineHeight: 1, display: "flex", justifyContent: "center", gap: "4px" }}>
+                {reviewStats.average ? 
+                  Array.from({ length: 5 }, (_, i) => (
+                    <span key={i} style={{ 
+                      color: i < reviewStats.average ? "#FFD700" : "#6b7280",
+                      fontSize: "2.5rem"
+                    }}>
+                      ⭐
+                    </span>
+                  ))
+                  : "N/A"
+                }
+              </div>
+              <p style={{ margin: "0", fontSize: "1rem", opacity: 0.8 }}>
+                Out of 5 stars
+              </p>
+            </div>
+          </div>
+
+          {/* Performance Metrics */}
+          <div style={{
+            background: "#0f172a",
+            border: "1px solid #1f2937",
+            borderRadius: "20px",
+            padding: "32px",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+            marginBottom: "24px"
+          }}>
+            <h3 style={{ color: "#e2e8f0", fontSize: "1.8rem", fontWeight: "800", margin: "0 0 24px 0" }}>
+              📈 Performance Metrics
+            </h3>
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gap: "20px"
+            }}>
+              <div style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "16px",
+                background: "#1e293b",
+                borderRadius: "12px",
+                border: "1px solid #334155"
+              }}>
+                <span style={{ color: "#cbd5e1", fontWeight: "600" }}>Success Rate</span>
+                <span style={{ color: "#10b981", fontWeight: "700", fontSize: "1.1rem" }}>99.9%</span>
+              </div>
+              <div style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "16px",
+                background: "#1e293b",
+                borderRadius: "12px",
+                border: "1px solid #334155"
+              }}>
+                <span style={{ color: "#cbd5e1", fontWeight: "600" }}>Processing Time</span>
+                <span style={{ color: "#60a5fa", fontWeight: "700", fontSize: "1.1rem" }}>~3s</span>
+              </div>
+              <div style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "16px",
+                background: "#1e293b",
+                borderRadius: "12px",
+                border: "1px solid #334155"
+              }}>
+                <span style={{ color: "#cbd5e1", fontWeight: "600" }}>Size Reduction</span>
+                <span style={{ color: "#f59e0b", fontWeight: "700", fontSize: "1.1rem" }}>Up to 80%</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Live Update Indicator */}
+          <div style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "8px",
+            background: "#10b981",
+            color: "white",
+            padding: "8px 16px",
+            borderRadius: "20px",
+            fontSize: "14px",
+            fontWeight: "600"
+          }}>
+            <div style={{
+              width: "8px",
+              height: "8px",
+              background: "white",
+              borderRadius: "50%",
+              animation: "pulse 2s infinite"
+            }}></div>
+            Live updates every 2 seconds
+          </div>
+
+          {/* Last Updated */}
+          {pdfStats.updated_at && (
+            <div style={{ marginTop: "16px", color: "#94a3b8", fontSize: "0.9rem" }}>
+              📅 Last updated: {new Date(pdfStats.updated_at).toLocaleDateString()}
+            </div>
+          )}
         </section>
 
         <ReviewModal

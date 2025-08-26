@@ -1,332 +1,290 @@
-# Tool Suite Development Guide
+# 🚀 Compress PDF Development Guide
 
-## 🚀 Getting Started
+## 📋 **Project Overview**
+This is a PDF compression tool with a React frontend and Node.js backend API. The frontend is deployed on Vercel, and the backend runs on a Ubuntu server.
 
-This guide will help you set up the Tool Suite development environment on your local machine.
-
-## 📋 Prerequisites
-
-- **Node.js**: 18.x or 20.x LTS
-- **npm**: 8.x or higher
-- **Git**: Latest version
-- **Ghostscript**: For PDF compression (optional, for backend testing)
-
-### Installing Prerequisites
-
-#### Node.js
-```bash
-# Ubuntu/Debian
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt-get install -y nodejs
-
-# macOS
-brew install node
-
-# Windows
-# Download from https://nodejs.org/
-```
-
-#### Ghostscript (Backend Testing)
-```bash
-# Ubuntu/Debian
-sudo apt install ghostscript
-
-# macOS
-brew install ghostscript
-
-# Windows
-# Download from https://ghostscript.com/
-```
-
-## 🏗️ Project Setup
-
-### 1. Clone Repository
-```bash
-git clone https://github.com/yourusername/tools-suite.git
-cd tools-suite
-```
-
-### 2. Install Dependencies
-
-#### Root Dependencies
-```bash
-npm install
-```
-
-#### Backend Dependencies
-```bash
-cd packages/backend
-npm install
-cd ../..
-```
-
-#### Frontend Dependencies
-```bash
-# Merge PDF Tool
-cd apps/merge-pdf-react
-npm install
-cd ../..
-
-# Compress PDF Tool
-cd apps/compress-pdf-react
-npm install
-cd ../..
-```
-
-### 3. Environment Configuration
-
-#### Backend Environment
-```bash
-cd packages/backend
-cp env.example .env
-```
-
-Edit `.env` file:
-```bash
-# Development settings
-NODE_ENV=development
-PORT=4000
-MAX_UPLOAD_MB=100
-FILE_TTL_MIN=15
-
-# Optional: Email configuration for testing
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-app-password
-```
-
-#### Frontend Environment
-Create `.env.local` files in each frontend app:
-
-**Merge PDF Tool** (`apps/merge-pdf-react/.env.local`):
-```bash
-VITE_API_BASE=http://localhost:4000
-```
-
-**Compress PDF Tool** (`apps/compress-pdf-react/.env.local`):
-```bash
-VITE_API_BASE=http://localhost:4000
-```
-
-## 🚀 Development Workflow
-
-### Starting the Development Environment
-
-#### 1. Start Backend API
-```bash
-cd packages/backend
-npm run dev
-```
-
-The API will be available at `http://localhost:4000`
-
-#### 2. Start Frontend Apps (in separate terminals)
-
-**Merge PDF Tool:**
-```bash
-cd apps/merge-pdf-react
-npm run dev
-```
-
-**Compress PDF Tool:**
-```bash
-cd apps/compress-pdf-react
-npm run dev
-```
-
-### Development URLs
-- **Backend API**: http://localhost:4000
-- **Merge PDF Tool**: http://localhost:5173 (or next available port)
-- **Compress PDF Tool**: http://localhost:5174 (or next available port)
-
-## 🧪 Testing
-
-### Backend Testing
-```bash
-cd packages/backend
-
-# Test API endpoints
-curl http://localhost:4000/health
-
-# Test PDF compression (if Ghostscript is installed)
-curl -X POST http://localhost:4000/v1/pdf/compress \
-  -F "file=@test.pdf" \
-  -F "compression=medium"
-```
-
-### Frontend Testing
-- Open each app in your browser
-- Test file uploads and processing
-- Check console for any errors
-- Verify API communication
-
-## 🔧 Development Tools
-
-### Code Quality
-```bash
-# Lint frontend apps
-cd apps/merge-pdf-react && npm run lint
-cd ../compress-pdf-react && npm run lint
-
-# Lint backend (if ESLint is configured)
-cd ../../packages/backend && npm run lint
-```
-
-### Building for Production
-```bash
-# Build Merge PDF Tool
-cd apps/merge-pdf-react
-npm run build
-
-# Build Compress PDF Tool
-cd ../compress-pdf-react
-npm run build
-```
-
-## 📁 Project Structure
-
+## 🏗️ **Project Structure**
 ```
 tools-suite/
-├── 📁 apps/                          # Frontend applications
-│   ├── 📁 merge-pdf-react/          # PDF merging tool
-│   │   ├── 📁 src/                  # Source code
-│   │   ├── 📁 public/               # Static assets
-│   │   ├── 📄 package.json          # Dependencies
-│   │   └── 📄 vite.config.js        # Build configuration
-│   └── 📁 compress-pdf-react/       # PDF compression tool
-│       ├── 📁 src/                  # Source code
-│       ├── 📁 public/               # Static assets
-│       ├── 📄 package.json          # Dependencies
-│       └── 📄 vite.config.js        # Build configuration
-├── 📁 packages/                      # Shared packages
-│   └── 📁 backend/                  # Unified API backend
-│       ├── 📁 src/                  # Source code
-│       │   ├── 📁 routes/           # API endpoints
-│       │   ├── 📁 lib/              # Utility libraries
-│       │   └── 📄 server.js         # Main server
-│       ├── 📄 package.json          # Dependencies
-│       └── 📄 .env                  # Environment variables
-├── 📄 README.md                     # Project overview
-├── 📄 DEVELOPMENT.md                # This file
-├── 📄 PROJECT_STRUCTURE.md          # Detailed structure
-├── 📄 DEPLOYMENT.md                 # Production deployment
-└── 📄 cleanup.sh                    # Cleanup script
+├── packages/
+│   └── backend/           # Node.js API server
+│       ├── src/
+│       │   └── server.js  # Main server file
+│       └── data/          # JSON data files
+├── apps/
+│   └── compress-pdf-react/ # React frontend app
+└── DEVELOPMENT.md         # This file
 ```
 
-## 🐛 Debugging
+## 🌐 **API Endpoints**
 
-### Backend Debugging
+### Base URL
+- **Production**: `https://api.compresspdf.co.za`
+- **Local**: `http://localhost:4000`
+
+### Available Endpoints
+```
+GET  /health                    # Health check
+GET  /v1/compress-pdf/stats    # Get compression stats
+GET  /v1/compress-pdf/reviews  # Get review stats
+GET  /v1/merge-pdf/stats       # Get merge PDF stats
+GET  /v1/merge-pdf/reviews     # Get merge PDF reviews
+GET  /v1/stats/combined        # Get combined stats
+GET  /v1/reviews/combined      # Get combined reviews
+POST /v1/reviews               # Submit a review
+POST /v1/pdf/compress          # Compress PDF file
+POST /v1/jobs/zip              # Download multiple files as ZIP
+```
+
+## 🖥️ **Local Development**
+
+### Backend (Node.js API)
 ```bash
-# Enable debug logging
+# Navigate to backend directory
 cd packages/backend
-DEBUG=* npm run dev
 
-# Check logs
-pm2 logs tool-suite-api
+# Install dependencies
+npm install
 
-# Monitor file system
-watch -n 1 "ls -la tmp/ uploads/ outputs/"
+# Start development server
+npm run dev
+# OR
+node src/server.js
+
+# Server runs on http://localhost:4000
 ```
 
-### Frontend Debugging
-- Use browser developer tools
-- Check network tab for API calls
-- Monitor console for errors
-- Use React DevTools extension
+### Frontend (React App)
+```bash
+# Navigate to frontend directory
+cd apps/compress-pdf-react
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# App runs on http://localhost:5173
+```
+
+## 🚀 **Server Deployment**
+
+### Server Details
+- **Host**: Ubuntu server (vm8347.domain.com)
+- **User**: maxx
+- **Project Location**: `/home/maxx/ToolSuite`
+- **PM2 Process Name**: `compress-pdf-backend` (NOT `tool-suite-api`)
+
+### Backend Deployment Steps
+```bash
+# 1. SSH into server
+ssh maxx@your-server-ip
+
+# 2. Navigate to project
+cd ~/ToolSuite
+
+# 3. Pull latest changes
+git pull origin main
+
+# 4. Install dependencies
+cd packages/backend
+npm install --production
+
+# 5. Restart PM2 process
+pm2 restart compress-pdf-backend
+
+# 6. Check status
+pm2 status
+pm2 logs compress-pdf-backend
+```
+
+### PM2 Commands
+```bash
+# Check all processes
+pm2 status
+
+# Restart backend
+pm2 restart compress-pdf-backend
+
+# View logs
+pm2 logs compress-pdf-backend
+
+# Stop backend
+pm2 stop compress-pdf-backend
+
+# Start backend
+pm2 start compress-pdf-backend
+```
+
+## 🔧 **Server Configuration**
+
+### Apache Virtual Host
+- **Config File**: `/etc/apache2/sites-available/api-compresspdf.conf`
+- **Domains**: `api.compresspdf.co.za` and `www.api.compresspdf.co.za`
+- **SSL**: Let's Encrypt certificates
+- **Proxy**: Forwards HTTPS requests to `http://127.0.0.1:4000`
+
+### SSL Setup
+```bash
+# Install Certbot
+sudo apt install certbot python3-certbot-apache
+
+# Get certificates
+sudo certbot --apache -d api.compresspdf.co.za -d www.api.compresspdf.co.za
+
+# Enable site
+sudo a2ensite api-compresspdf.conf
+
+# Restart Apache
+sudo systemctl restart apache2
+```
+
+### Apache Modules Required
+```bash
+sudo a2enmod proxy
+sudo a2enmod proxy_http
+sudo a2enmod ssl
+sudo a2enmod headers
+sudo a2enmod rewrite
+```
+
+## 📱 **Frontend Deployment**
+
+### Vercel Deployment
+- **Repository**: `https://github.com/BukhosiMoyo/compress-pdf-react`
+- **Domain**: `compresspdf.co.za`
+- **Build Command**: `npm run build`
+- **Output Directory**: `dist`
+
+### Git Commands for Frontend
+```bash
+# Navigate to frontend
+cd apps/compress-pdf-react
+
+# Check remote
+git remote -v
+
+# Set correct remote (if needed)
+git remote remove origin
+git remote add origin https://github.com/BukhosiMoyo/compress-pdf-react.git
+
+# Force push (if remote is bare)
+git push -u origin main --force
+
+# Normal push
+git add -f .
+git commit -m "Your commit message"
+git push origin main
+```
+
+## 🔍 **Troubleshooting**
 
 ### Common Issues
 
-#### CORS Errors
-- Ensure backend is running on correct port
-- Check CORS configuration in `server.js`
-- Verify frontend API base URL
-
-#### File Upload Issues
-- Check file size limits
-- Verify file type validation
-- Ensure upload directories exist
-
-#### Build Errors
-- Clear `node_modules` and reinstall
-- Check Node.js version compatibility
-- Verify all dependencies are installed
-
-## 🔄 Development Workflow
-
-### 1. Feature Development
+#### 1. API Not Accessible
 ```bash
-# Create feature branch
-git checkout -b feature/new-pdf-tool
+# Check if backend is running
+pm2 status
+curl http://localhost:4000/health
 
-# Make changes
-# Test locally
-# Commit changes
+# Check Apache status
+sudo systemctl status apache2
+sudo tail -f /var/log/apache2/error.log
+```
+
+#### 2. SSL Issues
+```bash
+# Check certificate paths
+sudo apache2ctl configtest
+
+# Check enabled sites
+sudo a2query -s
+
+# Disable conflicting sites
+sudo a2dissite 000-default-le-ssl
+sudo a2dissite 000-default
+```
+
+#### 3. Frontend Build Issues
+```bash
+# Clear node_modules and reinstall
+rm -rf node_modules package-lock.json
+npm install
+
+# Check Node.js version (Vite requires 20.19+)
+node --version
+```
+
+### Environment Variables
+```bash
+# Backend (.env)
+NODE_ENV=production
+PORT=4000
+
+# Frontend (Vite)
+VITE_API_BASE=https://api.compresspdf.co.za
+```
+
+## 📊 **Data Files**
+
+### Backend Data Structure
+```json
+// data/compress-pdf-stats.json
+{
+  "tool": "compress-pdf",
+  "total_compressed": 1250,
+  "updated_at": "2025-08-26T19:35:00.000Z"
+}
+
+// data/compress-pdf-reviews.json
+{
+  "tool": "compress-pdf",
+  "reviewCount": 57,
+  "ratingValue": 5,
+  "distribution": {"1": 0, "2": 0, "3": 0, "4": 0, "5": 57},
+  "updated_at": "2025-08-26T19:55:00.000Z"
+}
+```
+
+## 🔄 **Update Process**
+
+### When Making Changes
+1. **Update this file** with any new information
+2. **Test locally** first
+3. **Commit and push** to GitHub
+4. **Deploy to server** using PM2
+5. **Verify** the changes work
+
+### Git Workflow
+```bash
+# 1. Make changes
+# 2. Update this file
+# 3. Commit
 git add .
-git commit -m "Add new PDF tool feature"
+git commit -m "feat: Description of changes"
 
-# Push and create PR
-git push origin feature/new-pdf-tool
+# 4. Push to GitHub
+git push origin main
+
+# 5. Deploy to server
+ssh maxx@server
+cd ~/ToolSuite
+git pull origin main
+pm2 restart compress-pdf-backend
 ```
 
-### 2. Testing Changes
-```bash
-# Test backend changes
-cd packages/backend
-npm run dev
-# Test API endpoints
+## 📞 **Important Notes**
 
-# Test frontend changes
-cd apps/merge-pdf-react
-npm run dev
-# Test in browser
-```
-
-### 3. Code Review
-- Ensure code follows project standards
-- Test all functionality locally
-- Update documentation if needed
-- Request review from team members
-
-## 📚 Additional Resources
-
-### Documentation
-- [Tool Suite Project Structure](./PROJECT_STRUCTURE.md)
-- [Deployment Guide](./DEPLOYMENT.md)
-- [API Documentation](./packages/backend/README.md)
-
-### External Resources
-- [React Documentation](https://react.dev/)
-- [Vite Documentation](https://vitejs.dev/)
-- [Express.js Documentation](https://expressjs.com/)
-- [PDF.js Documentation](https://mozilla.github.io/pdf.js/)
-
-## 🤝 Contributing
-
-### Code Standards
-- Use consistent formatting
-- Add comments for complex logic
-- Follow existing naming conventions
-- Write meaningful commit messages
-
-### Testing Requirements
-- Test all new features locally
-- Ensure backward compatibility
-- Update tests if applicable
-- Test on multiple browsers/devices
-
-## 📞 Getting Help
-
-### Internal Resources
-- Check existing documentation
-- Review similar implementations
-- Ask team members for guidance
-
-### External Resources
-- Stack Overflow for technical issues
-- GitHub Issues for bug reports
-- Community forums for general questions
+- **ALWAYS check this file first** before making changes
+- **PM2 process name is `compress-pdf-backend`** (not `tool-suite-api`)
+- **Backend runs on port 4000**, Apache proxies HTTPS to it
+- **Frontend is deployed on Vercel**, not on the server
+- **API base URL is `https://api.compresspdf.co.za`** in production
+- **Live counters update every 5-10 seconds** automatically
 
 ---
 
-**Happy coding! 🎉**
+**Last Updated**: 2025-08-26
+**Maintainer**: Development Team
+**Version**: 1.0.0
