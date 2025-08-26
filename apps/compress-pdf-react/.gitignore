@@ -3,7 +3,8 @@ node_modules/
 dist/
 
 # env & local
-.env*
+.env
+!.env.production
 !.env.example
 
 # logs & misc
