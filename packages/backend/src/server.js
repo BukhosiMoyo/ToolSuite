@@ -21,6 +21,9 @@ import { bump as bumpMulti, summary as summaryMulti } from './stats-multi.js';
 
 dotenv.config();
 
+// Set development mode
+const isDevelopment = process.env.NODE_ENV !== 'production';
+
 // ----------------------------------------------------------------------------
 // App & logger
 // ----------------------------------------------------------------------------
@@ -39,9 +42,16 @@ const allowlist = [
   'https://merge-pdf-react.vercel.app', // Vercel deployment
 ];
 
-// Dev convenience: allow Vite on localhost
-if (process.env.NODE_ENV !== 'production') {
-  allowlist.push('http://localhost:5173', 'http://127.0.0.1:5173');
+// Dev convenience: allow Vite on localhost and local development
+if (isDevelopment) {
+  allowlist.push(
+    'http://localhost:5173', 
+    'http://127.0.0.1:5173',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://localhost:4000',
+    'http://127.0.0.1:4000'
+  );
 }
 
 const corsOptions = {
@@ -104,12 +114,13 @@ async function readMergeCounter() {
 }
 
 // ----------------------------------------------------------------------------
-// Reviews aggregate
+// Tool-specific Reviews
 // ----------------------------------------------------------------------------
-const REVIEWS_PATH = path.join(DATA_DIR, 'reviews.json');
+const COMPRESS_PDF_REVIEWS_PATH = path.join(DATA_DIR, 'compress-pdf-reviews.json');
+const MERGE_PDF_REVIEWS_PATH = path.join(DATA_DIR, 'merge-pdf-reviews.json');
 
-async function readReviews() {
-  try { return JSON.parse(await fsp.readFile(REVIEWS_PATH, 'utf8')); }
+async function readCompressPdfReviews() {
+  try { return JSON.parse(await fsp.readFile(COMPRESS_PDF_REVIEWS_PATH, 'utf8')); }
   catch {
     return {
       count: 0,
@@ -119,9 +130,27 @@ async function readReviews() {
     };
   }
 }
-async function writeReviews(obj) {
+
+async function readMergePdfReviews() {
+  try { return JSON.parse(await fsp.readFile(MERGE_PDF_REVIEWS_PATH, 'utf8')); }
+  catch {
+    return {
+      count: 0,
+      sum: 0,
+      distribution: { '1':0,'2':0,'3':0,'4':0,'5':0 },
+      updated_at: new Date().toISOString()
+    };
+  }
+}
+
+async function writeCompressPdfReviews(obj) {
   await fsp.mkdir(DATA_DIR, { recursive: true });
-  await fsp.writeFile(REVIEWS_PATH, JSON.stringify(obj), 'utf8');
+  await fsp.writeFile(COMPRESS_PDF_REVIEWS_PATH, JSON.stringify(obj), 'utf8');
+}
+
+async function writeMergePdfReviews(obj) {
+  await fsp.mkdir(DATA_DIR, { recursive: true });
+  await fsp.writeFile(MERGE_PDF_REVIEWS_PATH, JSON.stringify(obj), 'utf8');
 }
 
 // ----------------------------------------------------------------------------
@@ -163,9 +192,14 @@ app.use((req, res, next) => {
   next();
 });
 
-// Hide API endpoints from direct browser access
+// Hide API endpoints from direct browser access (but allow local development)
 app.use((req, res, next) => {
-  // Block direct browser access to API endpoints
+  // In development mode, allow ALL requests for testing
+  if (isDevelopment) {
+    return next();
+  }
+  
+  // Production security: Block direct browser access to API endpoints
   if (req.headers['user-agent'] && req.headers['user-agent'].includes('Mozilla')) {
     // Allow health check for monitoring
     if (req.path === '/health') {
@@ -193,12 +227,22 @@ app.use((req, res, next) => {
 // Health & logs
 // ----------------------------------------------------------------------------
 app.use((req, _res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  if (isDevelopment) {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} - Origin: ${req.headers.origin || 'none'} - User-Agent: ${req.headers['user-agent'] || 'none'}`);
+  } else {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  }
   next();
 });
 
 app.get('/health', (_req, res) => {
-  res.json({ ok: true, uptime: process.uptime(), ts: new Date().toISOString() });
+  res.json({ 
+    ok: true, 
+    uptime: process.uptime(), 
+    ts: new Date().toISOString(),
+    environment: isDevelopment ? 'development' : 'production',
+    cors_allowlist: isDevelopment ? allowlist : ['hidden_in_production']
+  });
 });
 
 // ----------------------------------------------------------------------------
@@ -232,10 +276,36 @@ app.get('/v1/merge-pdf/stats', async (_req, res) => {
   }
 });
 
+// Combined stats for both tools
+app.get('/v1/stats/combined', async (_req, res) => {
+  try {
+    const compressStats = await readCounter();
+    const mergeStats = await readMergeCounter();
+    
+    res.json({
+      tool: 'combined',
+      total_files: compressStats.total_compressed + mergeStats.total,
+      tools: {
+        'compress-pdf': {
+          total_compressed: compressStats.total_compressed,
+          updated_at: compressStats.updated_at
+        },
+        'merge-pdf': {
+          total_merged: mergeStats.total,
+          updated_at: mergeStats.updated_at
+        }
+      },
+      updated_at: new Date().toISOString()
+    });
+  } catch (e) {
+    res.status(500).json({ error: { code: 'combined_stats_failed', message: e.message } });
+  }
+});
+
 // Compress PDF Tool Reviews
 app.get('/v1/compress-pdf/reviews', async (_req, res) => {
   try {
-    const r = await readReviews();
+    const r = await readCompressPdfReviews();
     const avg = r.count ? (r.sum / r.count) : 0;
     res.json({
       tool: 'compress-pdf',
@@ -249,10 +319,10 @@ app.get('/v1/compress-pdf/reviews', async (_req, res) => {
   }
 });
 
-// Merge PDF Tool Reviews (currently same as compress, but can be separated later)
+// Merge PDF Tool Reviews
 app.get('/v1/merge-pdf/reviews', async (_req, res) => {
   try {
-    const r = await readReviews();
+    const r = await readMergePdfReviews();
     const avg = r.count ? (r.sum / r.count) : 0;
     res.json({
       tool: 'merge-pdf',
@@ -263,6 +333,44 @@ app.get('/v1/merge-pdf/reviews', async (_req, res) => {
     });
   } catch (e) {
     res.status(500).json({ error: { code: 'merge_pdf_reviews_failed', message: e.message } });
+  }
+});
+
+// Combined reviews for both tools
+app.get('/v1/reviews/combined', async (_req, res) => {
+  try {
+    const compressReviews = await readCompressPdfReviews();
+    const mergeReviews = await readMergePdfReviews();
+    
+    const totalCount = compressReviews.count + mergeReviews.count;
+    const totalSum = compressReviews.sum + mergeReviews.sum;
+    const avg = totalCount ? (totalSum / totalCount) : 0;
+    
+    // Combine distributions
+    const combinedDistribution = { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0 };
+    for (let i = 1; i <= 5; i++) {
+      combinedDistribution[i] = (compressReviews.distribution[i] || 0) + (mergeReviews.distribution[i] || 0);
+    }
+    
+    res.json({
+      tool: 'combined',
+      reviewCount: totalCount,
+      ratingValue: Number(avg.toFixed(2)),
+      distribution: combinedDistribution,
+      tools: {
+        'compress-pdf': {
+          reviewCount: compressReviews.count,
+          ratingValue: compressReviews.count ? Number((compressReviews.sum / compressReviews.count).toFixed(2)) : 0
+        },
+        'merge-pdf': {
+          reviewCount: mergeReviews.count,
+          ratingValue: mergeReviews.count ? Number((mergeReviews.sum / mergeReviews.count).toFixed(2)) : 0
+        }
+      },
+      updated_at: new Date().toISOString()
+    });
+  } catch (e) {
+    res.status(500).json({ error: { code: 'combined_reviews_failed', message: e.message } });
   }
 });
 
@@ -294,7 +402,7 @@ app.get('/v1/mergepdf/stats/summary', async (_req, res) => {
 
 app.get('/v1/reviews/summary', async (_req, res) => {
   try {
-    const r = await readReviews();
+    const r = await readCompressPdfReviews();
     const avg = r.count ? (r.sum / r.count) : 0;
     res.json({
       tool: 'compress-pdf',
@@ -328,19 +436,50 @@ app.post('/v1/merge-pdf/stats/bump', async (_req, res) => {
 
 app.post('/v1/reviews', async (req, res) => {
   try {
-    const n = Number(req.body?.rating);
+    if (isDevelopment) {
+      console.log('POST /v1/reviews - body:', req.body);
+    }
+    
+    const { rating, tool = 'compress-pdf' } = req.body || {};
+    const n = Number(rating);
     if (!Number.isInteger(n) || n < 1 || n > 5) {
       return res.status(400).json({ error: { code: 'invalid_rating', message: 'rating must be 1..5' } });
     }
-    const r = await readReviews();
-    r.count += 1;
-    r.sum += n;
-    r.distribution[String(n)] = (r.distribution[String(n)] || 0) + 1;
-    r.updated_at = new Date().toISOString();
-    await writeReviews(r);
+    
+    if (isDevelopment) {
+      console.log('Processing review:', { rating: n, tool });
+    }
+    
+    let r;
+    if (tool === 'merge-pdf') {
+      if (isDevelopment) console.log('Reading merge-pdf reviews...');
+      r = await readMergePdfReviews();
+      r.count += 1;
+      r.sum += n;
+      r.distribution[String(n)] = (r.distribution[String(n)] || 0) + 1;
+      r.updated_at = new Date().toISOString();
+      if (isDevelopment) console.log('Writing merge-pdf reviews...');
+      await writeMergePdfReviews(r);
+    } else {
+      // Default to compress-pdf
+      if (isDevelopment) console.log('Reading compress-pdf reviews...');
+      r = await readCompressPdfReviews();
+      r.count += 1;
+      r.sum += n;
+      r.distribution[String(n)] = (r.distribution[String(n)] || 0) + 1;
+      r.updated_at = new Date().toISOString();
+      if (isDevelopment) console.log('Writing compress-pdf reviews...');
+      await writeCompressPdfReviews(r);
+    }
+    
     const avg = r.sum / r.count;
-    res.json({ ok: true, reviewCount: r.count, ratingValue: Number(avg.toFixed(2)) });
+    if (isDevelopment) {
+      console.log('Review processed successfully:', { tool, reviewCount: r.count, ratingValue: Number(avg.toFixed(2)) });
+    }
+    res.json({ ok: true, tool, reviewCount: r.count, ratingValue: Number(avg.toFixed(2)) });
   } catch (e) {
+    console.error('Error in POST /v1/reviews:', e);
+    console.error('Error stack:', e.stack);
     res.status(500).json({ error: { code: 'reviews_write_failed', message: e.message } });
   }
 });
@@ -590,7 +729,16 @@ app.use((err, _req, res, next) => {
 });
 
 // ----------------------------------------------------------------------------
-// Listen (bind localhost; Apache proxies HTTPS → 127.0.0.1:4000)
+// Listen (bind to appropriate interface based on environment)
 // ----------------------------------------------------------------------------
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, '127.0.0.1', () => log.info(`API up on :${PORT}`));
+const HOST = isDevelopment ? '0.0.0.0' : '127.0.0.1';
+app.listen(PORT, HOST, () => {
+  log.info(`API up on ${HOST}:${PORT} (${isDevelopment ? 'development' : 'production'} mode)`);
+  if (isDevelopment) {
+    console.log(`🚀 Development server running on http://localhost:${PORT}`);
+    console.log(`📊 Health check: http://localhost:${PORT}/health`);
+    console.log(`📈 Stats: http://localhost:${PORT}/v1/compress-pdf/stats`);
+    console.log(`⭐ Reviews: http://localhost:${PORT}/v1/compress-pdf/reviews`);
+  }
+});
