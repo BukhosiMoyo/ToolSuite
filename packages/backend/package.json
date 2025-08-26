@@ -1,0 +1,36 @@
+{
+  "name": "tool-suite-api",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js"
+  },
+  "keywords": ["pdf", "tools", "api", "merge", "compress"],
+  "author": "Bukhosi Moyo",
+  "license": "MIT",
+  "description": "Unified API backend for Tool Suite PDF manipulation tools",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BukhosiMoyo/ToolSuite.git"
+  },
+  "bugs": {
+    "url": "https://github.com/BukhosiMoyo/ToolSuite/issues"
+  },
+  "homepage": "https://github.com/BukhosiMoyo/ToolSuite#readme",
+  "dependencies": {
+    "archiver": "^7.0.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "multer": "^2.0.2",
+    "nodemailer": "^7.0.5",
+    "pdf-lib": "^1.17.1",
+    "pino": "^9.8.0",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}

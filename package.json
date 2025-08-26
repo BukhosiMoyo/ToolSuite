@@ -1,0 +1,36 @@
+{
+  "name": "tool-suite",
+  "version": "1.0.0",
+  "description": "A comprehensive suite of PDF manipulation tools built with modern web technologies",
+  "keywords": ["pdf", "tools", "compression", "merging", "react", "nodejs"],
+  "author": "Tool Suite Team",
+  "license": "MIT",
+  "scripts": {
+    "dev": "echo 'Starting Tool Suite development environment...' && echo 'Backend: cd packages/backend && npm run dev' && echo 'Merge PDF: cd apps/merge-pdf-react && npm run dev' && echo 'Compress PDF: cd apps/compress-pdf-react && npm run dev'",
+    "install:all": "npm install && cd packages/backend && npm install && cd ../../apps/merge-pdf-react && npm install && cd ../compress-pdf-react && npm install",
+    "build:all": "cd apps/merge-pdf-react && npm run build && cd ../compress-pdf-react && npm run build",
+    "clean": "bash cleanup.sh",
+    "lint": "echo 'Linting all projects...' && cd apps/merge-pdf-react && npm run lint && cd ../compress-pdf-react && npm run lint",
+    "test": "echo 'Running tests...' && cd packages/backend && npm test 2>/dev/null || echo 'No tests configured'"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "dependencies": {
+    "archiver": "^7.0.1"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BukhosiMoyo/ToolSuite.git"
+  },
+  "bugs": {
+    "url": "https://github.com/BukhosiMoyo/ToolSuite/issues"
+  },
+  "homepage": "https://github.com/BukhosiMoyo/ToolSuite#readme"
+}
