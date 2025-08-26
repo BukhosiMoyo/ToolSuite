@@ -15,3 +15,6 @@ tmp/
 data/
 *.pdf
 *.zip
+
+# Ignore frontend apps - they have their own repositories
+apps/
