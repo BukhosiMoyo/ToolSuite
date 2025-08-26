@@ -1,0 +1,16 @@
+{
+  "projectId": "prj_2f3IbrmszjaKUIrJWCgaDewVIhq6",
+  "orgId": "team_oQ4rTL4tbOgH3omEut3xDpfF",
+  "projectName": "compress-pdf-react",
+  "settings": {
+    "createdAt": 1755114967680,
+    "framework": "vite",
+    "devCommand": null,
+    "installCommand": "npm install",
+    "buildCommand": "npm run build",
+    "outputDirectory": "dist",
+    "rootDirectory": null,
+    "directoryListing": false,
+    "nodeVersion": "22.x"
+  }
+}
