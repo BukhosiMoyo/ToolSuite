@@ -1,8 +1,9 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useMemo, useRef, useState, useEffect } from "react";
-import { FiTrash2, FiArrowRight, FiArchive, FiRefreshCw } from "react-icons/fi";
+import { FiTrash2, FiArrowRight, FiArrowLeft, FiArchive, FiRefreshCw } from "react-icons/fi";
 import logo from "/CompressPDFLogo.webp";
 import ReviewModal from "./components/ReviewModal";
+import StatsPage from "./components/StatsPage";
 import { useReviewPrompt } from "./hooks/useReviewPrompt";
 
 /* =========================
@@ -132,7 +133,7 @@ const MESSAGES = {
 /* =========================
    CONFIG
    ========================= */
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:4000";
+const API_BASE = import.meta.env.VITE_API_BASE || "https://api.compresspdf.co.za";
 const SUPPORTED = ["en", "af", "zu", "xh"];
 const baseUrl = "https://compresspdf.co.za";
 
@@ -172,7 +173,38 @@ const bigBtnBase = {
   border: "none",
   cursor: "pointer",
   boxShadow: "0 10px 24px rgba(0,0,0,.20)",
+  transition: "all 0.2s ease",
 };
+
+// Mobile responsive styles
+const mobileStyles = `
+  @media (max-width: 768px) {
+    .container-sm {
+      padding: 12px !important;
+    }
+    
+    .titleClamp {
+      font-size: 28px !important;
+    }
+    
+    .subtleClamp {
+      font-size: 16px !important;
+    }
+    
+    .stats-grid {
+      grid-template-columns: 1fr !important;
+      gap: 16px !important;
+    }
+    
+    .stat-card {
+      padding: 20px !important;
+    }
+    
+    .stat-number {
+      font-size: 2rem !important;
+    }
+  }
+`;
 const bigBtnRed = { ...bigBtnBase, background: "#ef4444", color: "#fff" };
 const bigBtnBlue = { ...bigBtnBase, background: "#374151", color: "#fff" };
 const bigBtnGreen = { ...bigBtnBase, background: "#16a34a", color: "#fff" };
@@ -319,6 +351,25 @@ function Header({ locale, changeLocale }) {
       >
         <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
           <img src={logo} alt="Compress PDF Logo" style={{ height: 32, width: "auto" }} />
+          <button 
+            onClick={() => setShowStats(true)}
+            style={{
+              color: "#e2e8f0",
+              textDecoration: "none",
+              padding: "8px 16px",
+              borderRadius: "8px",
+              background: "rgba(255,255,255,0.1)",
+              fontSize: "14px",
+              fontWeight: "600",
+              transition: "all 0.2s ease",
+              border: "none",
+              cursor: "pointer"
+            }}
+            onMouseEnter={(e) => e.target.style.background = "rgba(255,255,255,0.2)"}
+            onMouseLeave={(e) => e.target.style.background = "rgba(255,255,255,0.1)"}
+          >
+            📊 Stats
+          </button>
         </div>
 
         <div className="langWrap">
@@ -364,22 +415,36 @@ export default function App() {
   const { shouldAsk, markAsked, markRated } = useReviewPrompt();
 
 
-    // ✅ Fetch review stats once when app loads
+    // ✅ Fetch stats and reviews once when app loads
   useEffect(() => {
-    async function fetchReviewStats() {
+    async function fetchStats() {
       try {
-        const res = await fetch(`${API_BASE}/v1/compress-pdf/reviews`);
-        const data = await res.json();
-        // Map new API response to expected format
-        setReviewStats({
-          count: data.reviewCount || 0,
-          average: data.ratingValue || 5
-        });
+        // Fetch both stats and reviews in parallel
+        const [statsRes, reviewsRes] = await Promise.all([
+          fetch(`${API_BASE}/v1/compress-pdf/stats`),
+          fetch(`${API_BASE}/v1/compress-pdf/reviews`)
+        ]);
+        
+        if (statsRes.ok) {
+          const statsData = await statsRes.json();
+          setPdfStats({
+            total_compressed: statsData.total_compressed || 0,
+            updated_at: statsData.updated_at
+          });
+        }
+        
+        if (reviewsRes.ok) {
+          const reviewsData = await reviewsRes.json();
+          setReviewStats({
+            count: reviewsData.reviewCount || 0,
+            average: reviewsData.ratingValue || 5
+          });
+        }
       } catch (e) {
-        console.error("Failed to fetch review stats", e);
+        console.error("Failed to fetch stats", e);
       }
     }
-    fetchReviewStats();
+    fetchStats();
   }, []);
 
 
@@ -483,6 +548,9 @@ export default function App() {
   const [step, setStep] = useState(1);
   // Reviews aggregate stats (live)
   const [reviewStats, setReviewStats] = useState({ count: 0, average: 5 });
+  // Stats for compressed PDFs
+  const [pdfStats, setPdfStats] = useState({ total_compressed: 0, updated_at: null });
+  const [showStats, setShowStats] = useState(false);
   const inputRef = useRef(null);
   const [files, setFiles] = useState([]);
   const [compression, setCompression] = useState("medium");
@@ -666,7 +734,38 @@ export default function App() {
     a.remove();
   };
 
-  
+  // If stats page is shown, render it instead of the main app
+  if (showStats) {
+    return (
+      <div style={page}>
+        <StatsPage
+          stats={pdfStats}
+          reviews={reviewStats}
+          loading={false}
+          error={null}
+          onBack={() => setShowStats(false)}
+          onRefresh={() => {
+            // Refresh the stats
+            fetch(`${API_BASE}/v1/compress-pdf/stats`)
+              .then(res => res.json())
+              .then(data => setPdfStats({
+                total_compressed: data.total_compressed || 0,
+                updated_at: data.updated_at
+              }))
+              .catch(console.error);
+            
+            fetch(`${API_BASE}/v1/compress-pdf/reviews`)
+              .then(res => res.json())
+              .then(data => setReviewStats({
+                count: data.reviewCount || 0,
+                average: data.ratingValue || 5
+              }))
+              .catch(console.error);
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div style={page}>
@@ -712,6 +811,8 @@ export default function App() {
             {t("subtitle")}
           </div>
         </div>
+
+
 
         {/* Card */}
         <div style={card}>
@@ -863,9 +964,18 @@ export default function App() {
               </div>
 
               {/* Step 1 actions */}
-              <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
-                <div className="actionsRow">
-                  <button onClick={clearAll} style={bigBtnRed}>
+              <div style={{ marginTop: 16 }}>
+                <div style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "12px",
+                  width: "100%"
+                }}>
+                  <button onClick={clearAll} style={{
+                    ...bigBtnRed,
+                    width: "100%",
+                    justifyContent: "center"
+                  }}>
                     {t("clear")} <FiTrash2 />
                   </button>
                   <button
@@ -873,6 +983,8 @@ export default function App() {
                     disabled={files.length === 0}
                     style={{
                       ...bigBtnBlue,
+                      width: "100%",
+                      justifyContent: "center",
                       border: files.length > 0 ? "2px solid #60a5fa" : "1px solid #334155",
                       animation: files.length > 0 ? "pulseRing 1.6s ease-in-out infinite" : "none",
                       cursor: files.length > 0 ? "pointer" : "not-allowed",
@@ -946,16 +1058,30 @@ export default function App() {
                 style={{
                   marginTop: 16,
                   display: "flex",
-                  justifyContent: "space-between",
-                  gap: 12,
-                  flexWrap: "wrap",
+                  flexDirection: "column",
+                  gap: "12px",
+                  width: "100%"
                 }}
               >
-                <button onClick={() => setStep(1)} style={ghostBtn} className="btnBig">
-                  {t("back")}
+                <button onClick={() => setStep(1)} style={{
+                  ...ghostBtn,
+                  width: "100%",
+                  justifyContent: "center",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px"
+                }} className="btnBig">
+                  <FiArrowLeft /> {t("back")}
                 </button>
-                <button onClick={startCompression} style={primaryBtn(true)}>
-                  {t("compressPDF")}
+                <button onClick={startCompression} style={{
+                  ...primaryBtn(true),
+                  width: "100%",
+                  justifyContent: "center",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px"
+                }}>
+                  <FiRefreshCw /> {t("compressPDF")}
                 </button>
               </div>
             </div>
@@ -1077,17 +1203,34 @@ export default function App() {
               </div>
 
               {/* Step 3 footer controls */}
-              <div style={{ marginTop: 20, display: "flex", justifyContent: "center" }}>
-                <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center" }}>
-                  <button onClick={() => setStep(1)} style={bigBtnGreen}>
+              <div style={{ marginTop: 20 }}>
+                <div style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "12px",
+                  width: "100%"
+                }}>
+                  <button onClick={() => setStep(1)} style={{
+                    ...bigBtnGreen,
+                    width: "100%",
+                    justifyContent: "center"
+                  }}>
                     {t("compressMore")} <FiRefreshCw />
                   </button>
                   {files.some((f) => f.status === "done") && (
-                    <button onClick={downloadAllZip} style={bigBtnIndigo} className="btnBig">
+                    <button onClick={downloadAllZip} style={{
+                      ...bigBtnIndigo,
+                      width: "100%",
+                      justifyContent: "center"
+                    }} className="btnBig">
                       {t("downloadZip")} <FiArchive />
                     </button>
                   )}
-                  <button onClick={clearAll} style={bigBtnRed} className="btnBig">
+                  <button onClick={clearAll} style={{
+                    ...bigBtnRed,
+                    width: "100%",
+                    justifyContent: "center"
+                  }} className="btnBig">
                     {t("clear")} <FiTrash2 />
                   </button>
                 </div>
@@ -1132,8 +1275,24 @@ export default function App() {
             ⚠ Files are automatically deleted <span style={{textDecoration:"underline"}}>15 minutes</span> after upload for your privacy.
           </div>
 
-          {/* NEW: single stat */}
-          <StatCompressedTotal />
+          {/* Total Compressed PDFs count */}
+          <div
+            style={{
+              display: "inline-block",
+              textAlign: "center",
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              color: "white",
+              padding: "16px 24px",
+              borderRadius: 12,
+              fontWeight: 700,
+              marginTop: 16,
+              boxShadow: "0 8px 25px rgba(0,0,0,0.15)"
+            }}
+          >
+            📊 <strong>{pdfStats.total_compressed?.toLocaleString() || "0"}</strong> PDFs compressed so far
+          </div>
+
+
 
           {/* FAQ heading */}
           <h2 style={{ marginTop: 60, marginBottom: 12, fontSize: 30, fontWeight: 900 }}>
