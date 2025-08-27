@@ -486,44 +486,7 @@ export default function App() {
 
 
 
-    // ✅ Fetch stats and reviews once when app loads
-  useEffect(() => {
-    async function fetchStats() {
-      try {
-        // Fetch both stats and reviews in parallel
-        const [statsRes, reviewsRes] = await Promise.all([
-          fetch(`${API_BASE}/v1/compress-pdf/stats`),
-          fetch(`${API_BASE}/v1/compress-pdf/reviews`)
-        ]);
-        
-        if (statsRes.ok) {
-          const statsData = await statsRes.json();
-          setPdfStats({
-            total_compressed: statsData.total_compressed || 0,
-            updated_at: statsData.updated_at
-          });
-        }
-        
-        if (reviewsRes.ok) {
-          const reviewsData = await reviewsRes.json();
-          setReviewStats({
-            count: reviewsData.reviewCount || 0,
-            average: reviewsData.ratingValue || 5
-          });
-        }
-      } catch (e) {
-        console.error("Failed to fetch stats", e);
-      }
-    }
-    
-    // Initial fetch
-    fetchStats();
-    
-    // Set up live counter - update every 2 seconds for real-time feel
-    const interval = setInterval(fetchStats, 2000);
-    
-    return () => clearInterval(interval);
-  }, []);
+
 
 
 
@@ -666,11 +629,11 @@ export default function App() {
       }
     }
     
-    // Initial fetch
+    // Initial fetch only - no more aggressive polling
     fetchStats();
     
-    // Set up live counter - update every 2 seconds for real-time feel
-    const interval = setInterval(fetchStats, 2000);
+    // Optional: Update stats every 5 minutes instead of every 2 seconds
+    const interval = setInterval(fetchStats, 300000); // 5 minutes
     
     return () => clearInterval(interval);
   }, []);
@@ -1685,7 +1648,7 @@ export default function App() {
             </div>
           </div>
 
-          {/* Live Update Indicator */}
+          {/* Update Indicator */}
           <div style={{
             display: "inline-flex",
             alignItems: "center",
@@ -1704,7 +1667,7 @@ export default function App() {
               borderRadius: "50%",
               animation: "pulse 2s infinite"
             }}></div>
-            Live updates every 2 seconds
+            Stats updated every 5 minutes
           </div>
 
           {/* Last Updated */}
