@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "echo 'Starting Tool Suite development environment...' && echo 'Backend: cd packages/backend && npm run dev' && echo 'Merge PDF: cd apps/merge-pdf-react && npm run dev' && echo 'Compress PDF: cd apps/compress-pdf-react && npm run dev'",
     "install:all": "npm install && cd packages/backend && npm install && cd ../../apps/merge-pdf-react && npm install && cd ../compress-pdf-react && npm install",
+    "build": "cd apps/compress-pdf-react && npm install && npm run build",
     "build:all": "cd apps/merge-pdf-react && npm run build && cd ../compress-pdf-react && npm run build",
     "clean": "bash cleanup.sh",
     "lint": "echo 'Linting all projects...' && cd apps/merge-pdf-react && npm run lint && cd ../compress-pdf-react && npm run lint",

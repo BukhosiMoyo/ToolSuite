@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useMemo, useRef, useState, useEffect } from "react";
-import { FiTrash2, FiArrowRight, FiArrowLeft, FiArchive, FiRefreshCw, FiTrendingUp, FiStar, FiUsers } from "react-icons/fi";
+import { FiTrash2, FiArrowRight, FiArrowLeft, FiArchive, FiRefreshCw, FiTrendingUp, FiStar, FiUsers, FiGlobe } from "react-icons/fi";
 import logo from "/CompressPDFLogo.webp";
 import ReviewModal from "./components/ReviewModal";
 import { useReviewPrompt } from "./hooks/useReviewPrompt";
@@ -396,49 +396,58 @@ function Header({ locale, changeLocale }) {
             <label htmlFor="lang" style={{ fontSize: 12, marginRight: 8, color: "#94a3b8" }}>
               Language
             </label>
-            <select
-              id="lang"
-              value={locale}
-              onChange={(e) => changeLocale(e.target.value)}
-              style={{
-                padding: "8px 12px",
-                borderRadius: 10,
-                border: "1px solid #334155",
-                background: "#0f172a",
-                color: "#e2e8f0",
-                fontWeight: "600",
-                cursor: "pointer",
-              }}
-              className="desktop-lang-selector"
-            >
-              <option value="en">English</option>
-              <option value="af">Afrikaans</option>
-              <option value="zu">Zulu</option>
-              <option value="xh">Xhosa</option>
-            </select>
-            
-            {/* Mobile-friendly language selector */}
-            <select
-              id="lang-mobile"
-              value={locale}
-              onChange={(e) => changeLocale(e.target.value)}
-              style={{
-                padding: "8px 12px",
-                borderRadius: 10,
-                border: "1px solid #334155",
-                background: "#0f172a",
-                color: "#e2e8f0",
-                fontWeight: "600",
-                cursor: "pointer",
-                display: "none"
-              }}
-              className="mobile-lang-selector"
-            >
-              <option value="en">EN</option>
-              <option value="af">AF</option>
-              <option value="zu">ZU</option>
-              <option value="xh">XH</option>
-            </select>
+            {/* Language Selector with Globe Icon */}
+            <div style={{ position: "relative" }}>
+              <select
+                id="lang"
+                value={locale}
+                onChange={(e) => changeLocale(e.target.value)}
+                style={{
+                  padding: "8px 12px",
+                  paddingLeft: "36px",
+                  borderRadius: 10,
+                  border: "1px solid #334155",
+                  background: "#0f172a",
+                  color: "#e2e8f0",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  appearance: "none",
+                  minWidth: "80px"
+                }}
+                className="desktop-lang-selector"
+              >
+                <option value="en">EN</option>
+                <option value="af">AF</option>
+                <option value="zu">ZU</option>
+                <option value="xh">XH</option>
+              </select>
+              
+              {/* Globe Icon */}
+              <div style={{
+                position: "absolute",
+                left: "12px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                color: "#94a3b8",
+                pointerEvents: "none"
+              }}>
+                <FiGlobe size={16} />
+              </div>
+              
+              {/* Dropdown Arrow */}
+              <div style={{
+                position: "absolute",
+                right: "12px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                color: "#94a3b8",
+                pointerEvents: "none"
+              }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="m6 9 6 6 6-6"/>
+                </svg>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -825,23 +834,13 @@ export default function App() {
           }
         }
         
-        /* Language selector responsive behavior */
-        .desktop-lang-selector {
-          display: block;
+        /* Language selector styling */
+        #lang {
+          background-image: none !important;
         }
         
-        .mobile-lang-selector {
+        #lang::-ms-expand {
           display: none;
-        }
-        
-        @media (max-width: 768px) {
-          .desktop-lang-selector {
-            display: none;
-          }
-          
-          .mobile-lang-selector {
-            display: block;
-          }
         }
         *, *::before, *::after { box-sizing: border-box; }
         html, body { width:100%; margin:0; overflow-x:hidden; }
