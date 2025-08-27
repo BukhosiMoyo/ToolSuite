@@ -132,7 +132,7 @@ const MESSAGES = {
 /* =========================
    CONFIG
    ========================= */
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:4000";
+const API_BASE = import.meta.env.VITE_API_BASE || "https://api.compresspdf.co.za";
 const SUPPORTED = ["en", "af", "zu", "xh"];
 const baseUrl = "https://compresspdf.co.za";
 
@@ -393,9 +393,7 @@ function Header({ locale, changeLocale }) {
           </button>
           
           <div className="langWrap">
-            <label htmlFor="lang" style={{ fontSize: 12, marginRight: 8, color: "#94a3b8" }}>
-              Language
-            </label>
+
             {/* Language Selector with Globe Icon */}
             <div style={{ position: "relative" }}>
               <select
@@ -637,6 +635,45 @@ export default function App() {
   const [forceReviewOpen, setForceReviewOpen] = useState(false); // turn off debug pop
 
 
+
+  // ✅ Fetch stats and reviews once when app loads
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        // Fetch both stats and reviews in parallel
+        const [statsRes, reviewsRes] = await Promise.all([
+          fetch(`${API_BASE}/v1/compress-pdf/stats`),
+          fetch(`${API_BASE}/v1/compress-pdf/reviews`)
+        ]);
+        
+        if (statsRes.ok) {
+          const statsData = await statsRes.json();
+          setPdfStats({
+            total_compressed: statsData.total_compressed || 0,
+            updated_at: statsData.updated_at
+          });
+        }
+        
+        if (reviewsRes.ok) {
+          const reviewsData = await reviewsRes.json();
+          setReviewStats({
+            count: reviewsData.reviewCount || 0,
+            average: reviewsData.ratingValue || 5
+          });
+        }
+      } catch (e) {
+        console.error("Failed to fetch stats", e);
+      }
+    }
+    
+    // Initial fetch
+    fetchStats();
+    
+    // Set up live counter - update every 2 seconds for real-time feel
+    const interval = setInterval(fetchStats, 2000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   // ✅ now it's safe to use step/files
   useEffect(() => {
