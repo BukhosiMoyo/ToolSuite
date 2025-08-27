@@ -1,0 +1,5 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "apps/compress-pdf-react/dist",
+  "installCommand": "npm install"
+}
