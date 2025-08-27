@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useMemo, useRef, useState, useEffect } from "react";
+import { useMemo, useRef, useState, useEffect, useCallback } from "react";
 import { FiTrash2, FiArrowRight, FiArrowLeft, FiArchive, FiRefreshCw, FiTrendingUp, FiStar, FiUsers, FiGlobe } from "react-icons/fi";
 import logo from "/CompressPDFLogo.webp";
 import ReviewModal from "./components/ReviewModal";
@@ -467,6 +467,25 @@ export default function App() {
   const navigate = useNavigate();
   const [showReview, setShowReview] = useState(false);
   const { shouldAsk, markAsked, markRated } = useReviewPrompt();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     // ✅ Fetch stats and reviews once when app loads
