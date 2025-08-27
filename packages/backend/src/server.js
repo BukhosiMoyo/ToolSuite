@@ -22,7 +22,7 @@ import { bump as bumpMulti, summary as summaryMulti } from './stats-multi.js';
 dotenv.config();
 
 // Set development mode - default to development for better CORS handling
-const isDevelopment = process.env.NODE_ENV !== 'production' || true;
+const isDevelopment = process.env.NODE_ENV !== 'production';
 
 // ----------------------------------------------------------------------------
 // App & logger
@@ -211,6 +211,15 @@ app.use((req, res, next) => {
     
     // Allow requests from our local frontend (localhost:5173)
     if (req.headers.origin && req.headers.origin.includes('localhost:5173')) {
+      return next();
+    }
+    
+    // Allow requests from our production frontend domains
+    if (req.headers.origin && (
+      req.headers.origin.includes('compresspdf.co.za') ||
+      req.headers.origin.includes('mergepdf.co.za') ||
+      req.headers.origin.includes('vercel.app')
+    )) {
       return next();
     }
     
