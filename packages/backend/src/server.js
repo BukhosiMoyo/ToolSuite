@@ -21,8 +21,8 @@ import { bump as bumpMulti, summary as summaryMulti } from './stats-multi.js';
 
 dotenv.config();
 
-// Set development mode
-const isDevelopment = process.env.NODE_ENV !== 'production';
+// Set development mode - default to development for better CORS handling
+const isDevelopment = process.env.NODE_ENV !== 'production' || true;
 
 // ----------------------------------------------------------------------------
 // App & logger
@@ -57,9 +57,12 @@ if (isDevelopment) {
 const corsOptions = {
   origin: (origin, cb) => {
     if (!origin) return cb(null, true);                 // allow tools like curl/postman
-    cb(null, allowlist.includes(origin));               // echo origin if in allowlist
+    if (allowlist.includes(origin)) {
+      return cb(null, origin);                          // return the specific origin, not true
+    }
+    return cb(new Error('Not allowed by CORS'), false);
   },
-  credentials: true,                                    // <-- add this
+  credentials: true,
   methods: ['GET','POST','OPTIONS'],
   allowedHeaders: ['Content-Type','Authorization'],
   maxAge: 86400,
