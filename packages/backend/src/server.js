@@ -197,6 +197,9 @@ app.use((req, res, next) => {
 
 // Hide API endpoints from direct browser access (but allow local development)
 app.use((req, res, next) => {
+  // TEMPORARILY DISABLED FOR DEBUGGING - allow all requests
+  return next();
+  
   // In development mode, allow ALL requests for testing
   if (isDevelopment) {
     return next();
