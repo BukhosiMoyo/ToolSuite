@@ -162,8 +162,20 @@ async function writeMergePdfReviews(obj) {
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Serve merged outputs so browser can download /outputs/merged-*.pdf
-app.use('/outputs', express.static(path.join(__dirname, '..', 'outputs')));
+// Serve merged files publicly with caching & range support
+app.use(
+  '/outputs',
+  express.static(path.join(__dirname, '..', 'outputs'), {
+    fallthrough: false,
+    etag: true,
+    cacheControl: true,
+    maxAge: '1h',
+    setHeaders: (res) => {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Accept-Ranges', 'bytes');
+    },
+  })
+);
 
 // ----------------------------------------------------------------------------
 // API Security & Hiding

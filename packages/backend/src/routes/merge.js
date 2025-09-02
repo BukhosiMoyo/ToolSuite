@@ -55,11 +55,13 @@ mergeRouter.post("/merge", upload.array("files[]", 50), async (req, res) => {
     const absPath = path.join(outDir, filename);
     await fs.writeFile(absPath, bytes);
 
-    // Build absolute URL so the frontend doesn't hit Vite by accident
+    // Always build a public URL for the client
     const rel = `/outputs/${filename}`;
-    // For local development, use the backend URL directly
-    const host = process.env.NODE_ENV === 'production' ? req.get("host") : 'localhost:4000';
-    const absolute_url = `${req.protocol}://${host}${rel}`;
+    // Use production URL in production, localhost in development
+    const publicBaseUrl = process.env.PUBLIC_BASE_URL || 
+      (process.env.NODE_ENV === 'production' ? 'https://api.compresspdf.co.za' : 'http://localhost:4000');
+    const base = publicBaseUrl.replace(/\/+$/, '');
+    const downloadUrl = `${base}${rel}`;
     try {
       // Prefer direct import if available, otherwise POST to the internal bump endpoint
       if (typeof bumpMulti === 'function') {
@@ -72,7 +74,13 @@ mergeRouter.post("/merge", upload.array("files[]", 50), async (req, res) => {
 
     if (typeof bumpMergeTotal === 'function') await bumpMergeTotal();
 
-    return res.json({ output: { download_url: absolute_url } });
+    return res.json({
+      output: {
+        download_url: downloadUrl,
+        view_url: downloadUrl,
+        expires_at: Date.now() + 60 * 60 * 1000
+      }
+    });
   } catch (err) {
     console.error("merge failed", err);
     return res.status(500).json({ error: { message: "Server error while merging PDFs" } });
