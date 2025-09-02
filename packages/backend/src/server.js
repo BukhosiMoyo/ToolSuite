@@ -640,6 +640,27 @@ app.get('/v1/jobs/:jobId/download', (req, res) => {
   fs.createReadStream(meta.outPath).pipe(res);
 });
 
+// Lightweight metadata for the download page (size/pages/expiry)
+app.get('/v1/meta/:jobId', (req, res) => {
+  try {
+    const { jobId } = req.params;
+    const metaPath = path.join(INDEX_DIR, `${jobId}.json`);
+    if (!fs.existsSync(metaPath)) {
+      return res.status(404).json({ error: { code: 'not_found', message: 'unknown job' } });
+    }
+    const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+    const stat = fs.existsSync(meta.outPath) ? fs.statSync(meta.outPath) : null;
+    return res.json({
+      job_id: jobId,
+      bytes: stat?.size ?? null,
+      pages: meta.pages ?? null,
+      expires_at: new Date(meta.expiresAt).toISOString(),
+    });
+  } catch (e) {
+    return res.status(500).json({ error: { code: 'meta_failed', message: e.message } });
+  }
+});
+
 app.post('/v1/jobs/zip', express.json(), async (req, res) => {
   try {
     const { items } = req.body || {};

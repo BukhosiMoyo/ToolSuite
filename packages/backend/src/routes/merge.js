@@ -6,7 +6,7 @@ import fs from "fs/promises";
 import fssync from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { v4 as uuidv4 } from "uuid";
+import { v4 as uuidv4, v4 as uuid } from "uuid";
 import { bump as bumpMulti } from '../stats-multi.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -17,6 +17,11 @@ const outDir = path.join(__dirname, "..", "..", "outputs");
 if (!fssync.existsSync(outDir)) {
   fssync.mkdirSync(outDir, { recursive: true });
 }
+
+// Ensure we have the same INDEX_DIR structure as server.js
+const TMP_DIR   = path.join(__dirname, "..", "..", "tmp");
+const INDEX_DIR = path.join(TMP_DIR, "index");
+fssync.mkdirSync(INDEX_DIR, { recursive: true });
 
 // Multer in-memory storage; adjust limits as needed
 const upload = multer({
@@ -55,13 +60,21 @@ mergeRouter.post("/merge", upload.array("files[]", 50), async (req, res) => {
     const absPath = path.join(outDir, filename);
     await fs.writeFile(absPath, bytes);
 
-    // Always build a public URL for the client
-    const rel = `/outputs/${filename}`;
-    // Use production URL in production, localhost in development
-    const publicBaseUrl = process.env.PUBLIC_BASE_URL || 
-      (process.env.NODE_ENV === 'production' ? 'https://api.compresspdf.co.za' : 'http://localhost:4000');
-    const base = publicBaseUrl.replace(/\/+$/, '');
-    const downloadUrl = `${base}${rel}`;
+    // ✅ create a short-lived job and return a tokenized download_url
+    const jobId = `mpdf_${uuid().slice(0, 8)}`;
+    const token = uuid().replace(/-/g, '').slice(0, 24);
+    const ttlMinutes = parseInt(process.env.FILE_TTL_MIN || '60', 10);
+    const expiresAt = Date.now() + ttlMinutes * 60 * 1000;
+
+    // If you already computed pages, keep it; otherwise set null
+    const pages = typeof totalPages === 'number' ? totalPages : null;
+
+    fssync.writeFileSync(
+      path.join(INDEX_DIR, `${jobId}.json`),
+      JSON.stringify({ jobId, outPath: absPath, token, expiresAt, pages })
+    );
+
+    const outSize = fssync.existsSync(absPath) ? fssync.statSync(absPath).size : null;
     try {
       // Prefer direct import if available, otherwise POST to the internal bump endpoint
       if (typeof bumpMulti === 'function') {
@@ -75,10 +88,14 @@ mergeRouter.post("/merge", upload.array("files[]", 50), async (req, res) => {
     if (typeof bumpMergeTotal === 'function') await bumpMergeTotal();
 
     return res.json({
+      status: 'completed',
       output: {
-        download_url: downloadUrl,
-        view_url: downloadUrl,
-        expires_at: Date.now() + 60 * 60 * 1000
+        filename: path.basename(absPath),
+        bytes: outSize,
+        // ✅ RELATIVE URL so we never leak 'http://localhost:4000' in prod
+        download_url: `/v1/jobs/${jobId}/download?token=${token}`,
+        meta_url: `/v1/meta/${jobId}`,
+        expires_at: new Date(expiresAt).toISOString()
       }
     });
   } catch (err) {
