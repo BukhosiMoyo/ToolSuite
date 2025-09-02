@@ -68,13 +68,14 @@ mergeRouter.post("/merge", upload.array("files[]", 50), async (req, res) => {
 
     // If you already computed pages, keep it; otherwise set null
     const pages = typeof totalPages === 'number' ? totalPages : null;
+    
+    // ✅ Calculate file size and store in metadata
+    const outSize = fssync.existsSync(absPath) ? fssync.statSync(absPath).size : null;
 
     fssync.writeFileSync(
       path.join(INDEX_DIR, `${jobId}.json`),
-      JSON.stringify({ jobId, outPath: absPath, token, expiresAt, pages })
+      JSON.stringify({ jobId, outPath: absPath, token, expiresAt, pages, bytes: outSize })
     );
-
-    const outSize = fssync.existsSync(absPath) ? fssync.statSync(absPath).size : null;
     try {
       // Prefer direct import if available, otherwise POST to the internal bump endpoint
       if (typeof bumpMulti === 'function') {
