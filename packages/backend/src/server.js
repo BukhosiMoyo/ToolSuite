@@ -635,7 +635,7 @@ app.get('/v1/jobs/:jobId/download', (req, res) => {
   if (Date.now() > meta.expiresAt) return res.status(403).end();
 
   const filename = path.basename(meta.outPath);
-  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.setHeader('Content-Disposition', `attachment; filename="Merge PDF File.pdf"`);
   res.setHeader('Content-Type', filename.endsWith('.zip') ? 'application/zip' : 'application/pdf');
   fs.createReadStream(meta.outPath).pipe(res);
 });
