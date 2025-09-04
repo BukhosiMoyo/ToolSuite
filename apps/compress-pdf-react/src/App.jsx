@@ -871,7 +871,12 @@ export default function App() {
           .container-sm { padding: 8px; }
           .actionsRow button { width: 100%; justify-content: center; }
           .dropZone { padding: 18px !important; }
-          .fileName { max-width: 100% !important; }
+          .fileName { 
+            max-width: 100% !important; 
+            word-break: break-word !important;
+            overflow-wrap: break-word !important;
+            white-space: normal !important;
+          }
           .btnBig { width:100%; justify-content:center; }
         }
         
@@ -999,17 +1004,18 @@ export default function App() {
                             </div>
                           </div>
 
-                          <div style={{ overflow: "hidden", flex: 1 }}>
+                          <div style={{ overflow: "hidden", flex: 1, minWidth: 0 }}>
                             <div
                               className="fileName"
                               title={f.file.name}
                               style={{
-                                whiteSpace: "nowrap",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
+                                wordBreak: "break-word",
+                                overflowWrap: "break-word",
+                                whiteSpace: "normal",
                                 maxWidth: "100%",
                                 fontSize: 14,
                                 fontWeight: 600,
+                                lineHeight: 1.3,
                               }}
                             >
                               {f.file.name}
@@ -1205,14 +1211,16 @@ export default function App() {
                         flexWrap: "wrap",
                       }}
                     >
-                      <div style={{ overflow: "hidden" }}>
+                      <div style={{ overflow: "hidden", minWidth: 0, flex: 1 }}>
                         <div
                           title={f.file.name}
                           style={{
+                            wordBreak: "break-word",
+                            overflowWrap: "break-word",
                             whiteSpace: "normal",
-                            wordBreak: "break-all",
-                            maxWidth: 420,
+                            maxWidth: "100%",
                             fontWeight: 700,
+                            lineHeight: 1.3,
                           }}
                         >
                           {f.file.name}

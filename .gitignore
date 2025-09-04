@@ -16,5 +16,5 @@ data/
 *.pdf
 *.zip
 
-# Ignore frontend apps - they have their own repositories
-apps/
+# Temporarily including apps/ for migration to MacBook
+# apps/

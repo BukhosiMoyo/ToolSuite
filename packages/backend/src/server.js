@@ -17,6 +17,7 @@ const rateLimit = new Map();
 
 import { mergeRouter } from './routes/merge.js';
 import { emailRouter } from './routes/email.js';
+import bankRouter from './routes/bank.js';
 import { bump as bumpMulti, summary as summaryMulti } from './stats-multi.js';
 
 dotenv.config();
@@ -40,6 +41,10 @@ const allowlist = [
   'https://mergepdf.co.za',            // Merge PDF domain
   'https://www.mergepdf.co.za',        // Merge PDF domain with www
   'https://merge-pdf-react.vercel.app', // Vercel deployment
+  'http://localhost:5173',             // Vite dev server (bank converter)
+  'http://localhost:5175',             // Vite dev server (alternative port)
+  'http://127.0.0.1:5173',             // Vite dev server (localhost)
+  'http://127.0.0.1:5175',             // Vite dev server (localhost alternative)
 ];
 
 // Dev convenience: allow Vite on localhost and local development
@@ -722,6 +727,7 @@ app.post('/v1/jobs/zip', express.json(), async (req, res) => {
 // They can only be accessed programmatically by authorized frontend applications
 app.use('/v1/pdf', mergeRouter);
 app.use('/v1/email', emailRouter);
+app.use('/v1/bank', bankRouter);
 
 // Export a tiny bump hook so other server modules/routes can call it directly
 export async function bumpMergePdf() {
@@ -783,6 +789,9 @@ const PORT = process.env.PORT || 4000;
 const HOST = isDevelopment ? '0.0.0.0' : '127.0.0.1';
 app.listen(PORT, HOST, () => {
   log.info(`API up on ${HOST}:${PORT} (${isDevelopment ? 'development' : 'production'} mode)`);
+  
+  // Start cleanup worker for bank converter
+  
   if (isDevelopment) {
     console.log(`🚀 Development server running on http://localhost:${PORT}`);
     console.log(`📊 Health check: http://localhost:${PORT}/health`);
