@@ -1,19 +1,12 @@
-const API_BASE = 'http://localhost:4000'
+const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE) || 'http://localhost:4000'
 
 export async function fetchPreview({ 
   files, 
   currency, 
   dateFormatHint, 
   bankHint,
-  include_running_balance,
-  include_accrued_bank_charges,
-  categorize,
-  keep_card_ref,
-  reveal_card_ref,
-  emit_vat,
-  parse_value_date,
-  fail_on_balance_mismatch,
-  ocr
+  columns,
+  toggles
 }) {
   console.log('API_BASE:', API_BASE)
   console.log('fetchPreview called with:', { 
@@ -21,17 +14,7 @@ export async function fetchPreview({
     currency, 
     dateFormatHint, 
     bankHint,
-    toggles: {
-      include_running_balance,
-      include_accrued_bank_charges,
-      categorize,
-      keep_card_ref,
-      reveal_card_ref,
-      emit_vat,
-      parse_value_date,
-      fail_on_balance_mismatch,
-      ocr
-    }
+    toggles
   })
   
   const formData = new FormData()
@@ -44,22 +27,18 @@ export async function fetchPreview({
   formData.append('date_format_hint', dateFormatHint)
   formData.append('bank_hint', bankHint)
   
-  // Add FNB parser toggles
-  formData.append('include_running_balance', include_running_balance)
-  formData.append('include_accrued_bank_charges', include_accrued_bank_charges)
-  formData.append('categorize', categorize)
-  formData.append('keep_card_ref', keep_card_ref)
-  formData.append('reveal_card_ref', reveal_card_ref)
-  formData.append('emit_vat', emit_vat)
-  formData.append('parse_value_date', parse_value_date)
-  formData.append('fail_on_balance_mismatch', fail_on_balance_mismatch)
-  formData.append('ocr', ocr)
+  if (Array.isArray(columns) && columns.length) {
+    formData.append('columns', JSON.stringify(columns))
+  }
+  if (toggles) {
+    formData.append('toggles', JSON.stringify(toggles))
+  }
 
   const url = `${API_BASE}/v1/bank/preview`
   console.log('Making request to:', url)
   
-  // Add new multi-bank options
-  formData.append('date_format', 'YYYY-MM-DD')
+  // Unified date format field used by backend
+  formData.append('date_format', dateFormatHint || 'YYYY-MM-DD')
   
   const response = await fetch(url, {
     method: 'POST',
@@ -80,15 +59,8 @@ export async function downloadConvert({
   currency, 
   dateFormatHint, 
   bankHint,
-  include_running_balance,
-  include_accrued_bank_charges,
-  categorize,
-  keep_card_ref,
-  reveal_card_ref,
-  emit_vat,
-  parse_value_date,
-  fail_on_balance_mismatch,
-  ocr
+  columns,
+  toggles
 }) {
   const formData = new FormData()
   
@@ -100,19 +72,15 @@ export async function downloadConvert({
   formData.append('date_format_hint', dateFormatHint)
   formData.append('bank_hint', bankHint)
   
-  // Add FNB parser toggles
-  formData.append('include_running_balance', include_running_balance)
-  formData.append('include_accrued_bank_charges', include_accrued_bank_charges)
-  formData.append('categorize', categorize)
-  formData.append('keep_card_ref', keep_card_ref)
-  formData.append('reveal_card_ref', reveal_card_ref)
-  formData.append('emit_vat', emit_vat)
-  formData.append('parse_value_date', parse_value_date)
-  formData.append('fail_on_balance_mismatch', fail_on_balance_mismatch)
-  formData.append('ocr', ocr)
+  if (Array.isArray(columns) && columns.length) {
+    formData.append('columns', JSON.stringify(columns))
+  }
+  if (toggles) {
+    formData.append('toggles', JSON.stringify(toggles))
+  }
 
-  // Add new multi-bank options
-  formData.append('date_format', 'YYYY-MM-DD')
+  // Unified date format field used by backend
+  formData.append('date_format', dateFormatHint || 'YYYY-MM-DD')
   
   const response = await fetch(`${API_BASE}/v1/bank/convert?merge=${mergeMode}`, {
     method: 'POST',

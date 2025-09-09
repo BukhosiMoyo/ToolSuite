@@ -18,3 +18,5 @@ data/
 
 # Temporarily including apps/ for migration to MacBook
 # apps/
+# frontends live in their own repos; keep them out of the backend repo
+apps/

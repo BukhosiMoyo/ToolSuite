@@ -1,0 +1,28 @@
+{
+  "name": "sign-api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc -p .",
+    "start": "node --env-file=.env dist/index.js",
+    "seed": "node --env-file=.env seed.mjs",
+    "db:migrate": "psql \"$DATABASE_URL\" -f sql/001_init.sql"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.4.0",
+    "jsonwebtoken": "^9.0.2",
+    "pdf-lib": "^1.17.1",
+    "pg": "^8.11.5",
+    "sanitize-filename": "^1.6.3",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.4.5"
+  }
+}
+

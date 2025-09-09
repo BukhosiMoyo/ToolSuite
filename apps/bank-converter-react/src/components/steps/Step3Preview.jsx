@@ -4,7 +4,7 @@ import { fetchPreview } from '../../lib/api'
 import { Eye, Loader2, RefreshCw, AlertTriangle, CheckCircle } from 'lucide-react'
 
 export function Step3Preview() {
-  const { files, previewRows, warnings, currency, dateFormatHint, bankHint, setPreview } = useBankStore()
+  const { files, previewRows, warnings, currency, dateFormatHint, bankHint, columns, toggles, setPreview } = useBankStore()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -12,7 +12,7 @@ export function Step3Preview() {
     setError('')
     setLoading(true)
     try {
-      const result = await fetchPreview({ files, currency, dateFormatHint, bankHint })
+      const result = await fetchPreview({ files, currency, dateFormatHint, bankHint, columns, toggles })
       setPreview(result.rows, result.warnings)
     } catch (e) {
       setError(e.message || 'Preview generation failed')

@@ -15,12 +15,15 @@ export function Step4Export() {
     setLoading(true)
     
     try {
+      const state = useBankStore.getState()
       const { blob, filename } = await downloadConvert({ 
         files, 
         mergeMode, 
-        currency: useBankStore.getState().currency, 
-        dateFormatHint: useBankStore.getState().dateFormatHint, 
-        bankHint: useBankStore.getState().bankHint 
+        currency: state.currency, 
+        dateFormatHint: state.dateFormatHint, 
+        bankHint: state.bankHint,
+        columns: state.columns,
+        toggles: state.toggles
       })
       
       const url = URL.createObjectURL(blob)

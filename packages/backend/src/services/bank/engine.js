@@ -1,6 +1,6 @@
 // Multi-bank parsing engine: tries known adapters first, then generic fallback
 import fs from 'fs/promises'
-import pdf from 'pdf-parse'
+import parsePdf from 'pdf-parse/lib/pdf-parse.js'
 import crypto from 'crypto'
 import dayjs from 'dayjs'
 import fnbAdapter from './adapters/fnbPdf.js'
@@ -20,7 +20,7 @@ export async function preview(files, opts = {}) {
 
   // NOTE: we only handle PDF here; CSV/XLSX can use existing parsers if you already have them.
   // Extend later if needed.
-  const pdfData = await pdf(bytes)
+  const pdfData = await parsePdf(bytes)
   const rawPages = pdfData.text.split(/\f/g).map((t, i) => ({ pageNumber: i + 1, text: t }))
 
   // Try adapters

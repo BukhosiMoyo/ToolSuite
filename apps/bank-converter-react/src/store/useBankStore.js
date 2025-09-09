@@ -1,5 +1,12 @@
 import { create } from 'zustand'
 
+const DEFAULT_COLUMNS = [
+  'date','value_date','description','amount','balance','currency',
+  'type','method','merchant','reference','card_ref',
+  'fee_amount','vat_amount','bank_name','account_number',
+  'statement_id','transaction_id','page_no','line_no','source_file'
+]
+
 export const useBankStore = create((set, get) => ({
   // Files
   files: [],
@@ -29,6 +36,12 @@ export const useBankStore = create((set, get) => ({
   bankHint: '',
   mergeMode: 'single',
   setOption: (key, value) => set({ [key]: value }),
+
+  // Unified columns and toggles used by preview & convert
+  columns: DEFAULT_COLUMNS,
+  toggles: {},
+  setColumns: (cols) => set({ columns: (cols && cols.length) ? cols : DEFAULT_COLUMNS }),
+  setToggles: (t) => set({ toggles: { ...get().toggles, ...t } }),
 
   // Preview
   previewRows: [],

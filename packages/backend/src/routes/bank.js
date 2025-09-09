@@ -19,7 +19,8 @@ router.post('/preview', upload.array('files[]'), async (req, res) => {
     console.log('Bank preview request:', { files: req.files?.length, body: req.body })
     const out = await preview(req.files, {
       date_format: req.body?.date_format,
-      columns: req.body?.columns ? JSON.parse(req.body.columns) : undefined
+      columns: req.body?.columns ? JSON.parse(req.body.columns) : undefined,
+      toggles: req.body?.toggles ? JSON.parse(req.body.toggles) : undefined
     })
     console.log('Bank preview result:', { rows: out.rows?.length, warnings: out.warnings?.length })
     res.json(out)
@@ -36,7 +37,8 @@ router.post('/convert', upload.array('files[]'), async (req, res) => {
     
     const out = await convert(req.files, {
       date_format: req.body?.date_format,
-      columns: req.body?.columns ? JSON.parse(req.body.columns) : undefined
+      columns: req.body?.columns ? JSON.parse(req.body.columns) : undefined,
+      toggles: req.body?.toggles ? JSON.parse(req.body.toggles) : undefined
     })
     
     console.log('Bank convert result:', { rows: out.metaJson?.row_count, columns: out.metaJson?.columns?.length })

@@ -1,0 +1,63 @@
+openapi: 3.0.3
+info: { title: Sign API, version: 0.1.0 }
+servers: [{ url: http://localhost:4000 }]
+paths:
+  /api/documents:
+    post:
+      summary: Create document
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ownerId, pdfBase64]
+              properties:
+                ownerId: { type: string, format: uuid }
+                title: { type: string }
+                pdfBase64: { type: string }
+      responses: { "200": { description: OK } }
+  /api/documents/{id}:
+    get:
+      summary: Get document details (fields & signers)
+      parameters: [{ in: path, name: id, required: true, schema: { type: string, format: uuid } }]
+      responses: { "200": { description: OK } }
+  /api/documents/{id}/fields:
+    post:
+      summary: Replace fields for a document
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fields]
+              properties:
+                fields:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id: { type: string }
+                      assignedSignerId: { type: string, nullable: true }
+                      type: { type: string, enum: [signature, initials, text, textarea, date, checkbox] }
+                      page: { type: integer }
+                      x: { type: number }
+                      y: { type: number }
+                      w: { type: number }
+                      h: { type: number }
+                      rotate: { type: number }
+                      required: { type: boolean }
+                      placeholder: { type: string, nullable: true }
+                      color: { type: string, nullable: true }
+                      fontKey: { type: string, nullable: true }
+                      sizePt: { type: number, nullable: true }
+                      lockedAtSend: { type: boolean }
+      responses: { "200": { description: OK } }
+  /api/sign/{token}:
+    get: { summary: Resolve signer session, responses: { "200": { description: OK } } }
+  /api/sign/{token}/save:
+    post: { summary: Autosave signer overlays, responses: { "200": { description: OK } } }
+  /api/sign/{token}/finish:
+    post: { summary: Validate and mark signer signed, responses: { "200": { description: OK } } }
+

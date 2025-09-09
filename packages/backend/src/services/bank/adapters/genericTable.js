@@ -38,6 +38,16 @@ function peelRight(line) {
   return { desc: rest.trim(), right } // right[0]=balance, right[1]=amount, right[2]=fee?
 }
 
+// --- Fee detection improvements for SA banks ---
+const FEE_WORDS = [
+  'bank charges','service fee','monthly fee','fees','charges',
+  'commission','accrued bank charges','admin fee','atm fee'
+]
+function isFeeRow(desc) {
+  const s = String(desc || '').toLowerCase()
+  return FEE_WORDS.some(w => s.includes(w))
+}
+
 export default {
   name: 'generic-table',
   async tryParse(pages, { pdfData }) {
@@ -76,15 +86,28 @@ export default {
             amount = -Math.abs(right[0].value)
           }
 
+          let type = 'other'
+          let method = 'unknown'
+          let fee_amount = feeTok ? Math.abs(feeTok.value) : (right.length === 1 ? Math.abs(right[0].value) : '')
+
+          if (isFeeRow(desc)) {
+            type = 'bank_fee'
+            if (typeof amount === 'number') fee_amount = Math.abs(amount)
+            else if (feeTok && typeof feeTok.value === 'number') {
+              fee_amount = Math.abs(feeTok.value)
+              amount = -Math.abs(feeTok.value)
+            }
+          }
+
           curr = {
             date: d.iso, value_date: '',
             description: desc || (right.length === 1 ? 'Bank Charge' : ''),
             amount,
             balance: balanceTok ? balanceTok.value : null,
             currency: '',
-            type: 'other', method: 'unknown',
+            type, method,
             merchant: '', reference: '', card_ref: '',
-            fee_amount: feeTok ? Math.abs(feeTok.value) : (right.length === 1 ? Math.abs(right[0].value) : ''),
+            fee_amount,
             vat_amount: '',
             bank_name: '', account_number: '',
             statement_id: '', transaction_id: '',
